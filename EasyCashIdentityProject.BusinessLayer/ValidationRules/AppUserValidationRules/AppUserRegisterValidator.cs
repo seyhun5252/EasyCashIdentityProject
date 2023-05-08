@@ -23,5 +23,6 @@ namespace EasyCashIdentityProject.BusinessLayer.ValidationRules.AppUserValidatio
             RuleFor(x => x.Name).MinimumLength(2).WithMessage("Lütfen en az 2  karakter girişi yapın");
             RuleFor(x => x.ConfirmPassword).Equal(y => y.Password).WithMessage("Parolalarınız eşleşmedi");
             RuleFor(x => x.Email).EmailAddress().WithMessage("Lütfen geçerli bir mail adresi giriniz");
+        }
     }
 }

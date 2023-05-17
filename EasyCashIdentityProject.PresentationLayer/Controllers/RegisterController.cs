@@ -1,8 +1,10 @@
 ﻿using EasyCashIdentityProject.DtoLayer.Dtos.AppUserDtos;
 using EasyCashIdentityProject.EntityLayer.Concrete;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using MimeKit;
 
 namespace EasyCashIdentityProject.PresentationLayer.Controllers
 {
@@ -26,6 +28,9 @@ namespace EasyCashIdentityProject.PresentationLayer.Controllers
 		{
 			if (ModelState.IsValid)
 			{
+				Random random = new Random();
+				int code = random.Next(100000, 1000000);
+
 				AppUser appUser = new AppUser()
 				{
 					UserName = appUserRegisterDto.Username,
@@ -35,12 +40,33 @@ namespace EasyCashIdentityProject.PresentationLayer.Controllers
 					City = "aaaa",
 					District = "bbb",
 					ImageUrl = "ccc",
+					ConfirmCode = code,
 				};
 
 				var result = await _userManager.CreateAsync(appUser, appUserRegisterDto.Password);
 
 				if (result.Succeeded)
 				{
+					MimeMessage mimeMessage = new MimeMessage();
+					MailboxAddress mailboxAddressFrom = new MailboxAddress("Easy Cash Admin", "seyhun5252celebioglu@hotmail.com");
+					MailboxAddress mailboxAddressTo = new MailboxAddress("User",appUser.Email);
+
+					mimeMessage.From.Add(mailboxAddressFrom);
+					mimeMessage.To.Add(mailboxAddressTo);
+
+					var bodyBuilder = new BodyBuilder();
+					bodyBuilder.TextBody = "Kayıt Gerçekleştirmek için onay Kodunuz: " + code;
+					mimeMessage.Body = bodyBuilder.ToMessageBody();
+					mimeMessage.Subject = "Easy Cash Onay Kodu";
+
+					SmtpClient smtpClient = new SmtpClient();
+					smtpClient.Connect("smtp.office365.com", 587, false);
+					smtpClient.Authenticate("seyhun5252celebioglu@hotmail.com", "571632Reis.");
+					smtpClient.Send(mimeMessage);
+					smtpClient.Disconnect(true);
+
+					TempData["Mail"] = appUserRegisterDto.Email;
+
 					return RedirectToAction("Index", "ConfirmMail");
 				}
 				else
